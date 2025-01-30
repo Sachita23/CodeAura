@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { auth } from "../lib/firebase";
+import { auth } from "../lib/firebase"; // Firebase authentication setup
 
 export default function Chatbot() {
   const [user, setUser] = useState(null);
@@ -8,19 +8,22 @@ export default function Chatbot() {
   const [response, setResponse] = useState("");
   const router = useRouter();
 
+  // Handle user authentication (check if signed in)
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
       if (user) {
-        setUser(user);
+        setUser(user); // User is signed in, set the user state
       } else {
-        router.push("/signin"); // Redirect to sign-in page if not signed in
+        router.push("/signin"); // Redirect to sign-in if not authenticated
       }
     });
   }, [router]);
 
+  // Handle form submission to interact with the chatbot
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Send the prompt to the backend API (which is chat.py on the server)
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -30,9 +33,17 @@ export default function Chatbot() {
       });
 
       const data = await res.json();
-      setResponse(data.response); // Display response from Groq chatbot
+
+      if (res.ok) {
+        // Display the chatbot's response
+        setResponse(data.response);
+      } else {
+        // Handle error if response is not okay
+        setResponse("Error: Could not get a response from the chatbot.");
+      }
     } catch (err) {
       console.error("Error fetching Groq response:", err);
+      setResponse("Error: An unexpected error occurred.");
     }
   };
 
@@ -51,6 +62,7 @@ export default function Chatbot() {
               rows="4"
               cols="50"
             />
+            <br />
             <button type="submit">Ask</button>
           </form>
           <div>
